@@ -1,0 +1,5 @@
+google:
+  client_secret_file: "./client_secret.json"
+  token_file: "./token.json"
+  calendar_id: "primary"
+  timezone: "Europe/Lisbon"

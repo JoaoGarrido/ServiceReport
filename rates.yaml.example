@@ -1,0 +1,5 @@
+service_costs:
+  - name: "Explicação"
+    per_person_hourly:
+      Joana: 15
+      Pedro: 12.5
