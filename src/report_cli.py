@@ -2,7 +2,8 @@ import argparse
 import logging
 from gcalendar_helper import get_calendar_service, fetch_events
 from zoneinfo import ZoneInfo
-from calendar_report import generate_report, month_range, load_config
+from calendar_to_service import month_range, load_config
+from calendar_report import generate_report
 from typing import Dict
 
 
