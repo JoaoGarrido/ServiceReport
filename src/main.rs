@@ -36,6 +36,9 @@ enum Commands {
 
     #[command(about = "Start the HTTP server")]
     Serve {
+        #[arg(long)]
+        event_prefix: Option<String>,
+
         #[arg(long, default_value = "127.0.0.1")]
         host: String,
 
@@ -71,8 +74,19 @@ async fn main() -> Result<()> {
                 year,
             )?;
         }
-        Commands::Serve { host, port } => {
-            server::run(host, port, args.calendar_config, args.rates_config).await?;
+        Commands::Serve {
+            event_prefix,
+            host,
+            port,
+        } => {
+            server::run(
+                event_prefix,
+                host,
+                port,
+                args.calendar_config,
+                args.rates_config,
+            )
+            .await?;
         }
     }
 

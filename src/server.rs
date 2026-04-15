@@ -16,6 +16,7 @@ use std::sync::Arc;
 
 #[derive(Clone)]
 struct AppState {
+    prefix: Option<String>,
     calendar_config_path: String,
     rates_config_path: String,
 }
@@ -24,7 +25,6 @@ struct AppState {
 struct AppQuery {
     rates_config: Option<String>,
     format: Option<String>,
-    service: Option<String>,
 }
 
 fn build_cost_lookup(config: &RatesConfig) -> HashMap<String, HashMap<String, f64>> {
@@ -60,7 +60,10 @@ async fn get_rates(
         )
     })?;
 
-    let service = query.service.unwrap_or_else(|| "Explicação".to_string());
+    let service = state
+        .prefix
+        .clone()
+        .unwrap_or_else(|| "Explicação".to_string());
 
     let mut rows = build_cost_lookup(&config)
         .get(&service)
@@ -130,7 +133,10 @@ async fn post_rates(
 
     let service_costs = config.service_costs.get_or_insert_with(Vec::new);
 
-    let service_name: String = query.service.unwrap_or_else(|| "Explicação".to_string());
+    let service_name: String = state
+        .prefix
+        .clone()
+        .unwrap_or_else(|| "Explicação".to_string());
 
     let target_entry = service_costs.iter_mut().find(|e| e.name == service_name);
 
@@ -184,7 +190,10 @@ async fn delete_rates(
     })?;
 
     let mut removed = false;
-    let service_name = query.service.unwrap_or_else(|| "Explicação".to_string());
+    let service_name = state
+        .prefix
+        .clone()
+        .unwrap_or_else(|| "Explicação".to_string());
 
     if let Some(ref mut service_costs) = config.service_costs {
         if let Some(entry) = service_costs.iter_mut().find(|e| e.name == service_name) {
@@ -245,7 +254,6 @@ async fn rates_ui() -> Html<String> {
 struct ReportQuery {
     calendar_config: Option<String>,
     rates_config: Option<String>,
-    prefix: Option<String>,
 }
 
 async fn get_report(
@@ -313,13 +321,12 @@ async fn get_report(
 
     let cost_lookup = build_cost_lookup(&rates_config);
 
-    let prefix = query.prefix.as_deref();
     let report = generate_report(
         &events,
         month,
         year,
         &tz,
-        prefix,
+        state.prefix.clone().as_deref(),
         &cost_lookup,
         OutputFormat::Html,
     );
@@ -328,12 +335,14 @@ async fn get_report(
 }
 
 pub async fn run(
+    prefix: Option<String>,
     host: String,
     port: u16,
     calendar_config: String,
     rates_config: String,
 ) -> Result<()> {
     let state = Arc::new(AppState {
+        prefix: prefix,
         calendar_config_path: calendar_config,
         rates_config_path: rates_config,
     });
