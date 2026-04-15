@@ -135,12 +135,12 @@ async fn post_rates(
     let target_entry = service_costs.iter_mut().find(|e| e.name == service_name);
 
     if let Some(entry) = target_entry {
-        let per_person = entry.per_person_hourly.get_or_insert_with(HashMap::new);
-        per_person.insert(payload.student, payload.rate);
+        let per_client = entry.per_client_hourly.get_or_insert_with(HashMap::new);
+        per_client.insert(payload.student, payload.rate);
     } else {
         let new_entry = config::ServiceCost {
             name: service_name.clone(),
-            per_person_hourly: Some({
+            per_client_hourly: Some({
                 let mut m = HashMap::new();
                 m.insert(payload.student, payload.rate);
                 m
@@ -188,8 +188,8 @@ async fn delete_rates(
 
     if let Some(ref mut service_costs) = config.service_costs {
         if let Some(entry) = service_costs.iter_mut().find(|e| e.name == service_name) {
-            if let Some(ref mut per_person) = entry.per_person_hourly {
-                if per_person.remove(&payload.student).is_some() {
+            if let Some(ref mut per_client) = entry.per_client_hourly {
+                if per_client.remove(&payload.student).is_some() {
                     removed = true;
                 }
             }

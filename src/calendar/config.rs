@@ -43,8 +43,8 @@ pub struct RatesConfig {
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 pub struct ServiceCost {
     pub name: String,
-    #[serde(rename = "per_person_hourly")]
-    pub per_person_hourly: Option<HashMap<String, f64>>,
+    #[serde(rename = "per_client_hourly")]
+    pub per_client_hourly: Option<HashMap<String, f64>>,
 }
 
 pub fn build_cost_lookup(config: &RatesConfig) -> HashMap<String, HashMap<String, f64>> {
@@ -52,10 +52,10 @@ pub fn build_cost_lookup(config: &RatesConfig) -> HashMap<String, HashMap<String
     if let Some(ref service_costs) = config.service_costs {
         for entry in service_costs {
             let name = entry.name.clone();
-            if let Some(ref per_person) = entry.per_person_hourly {
+            if let Some(ref per_client) = entry.per_client_hourly {
                 let mut normalized = HashMap::new();
-                for (person, rate) in per_person {
-                    normalized.insert(person.clone(), *rate);
+                for (client, rate) in per_client {
+                    normalized.insert(client.clone(), *rate);
                 }
                 cost_lookup.insert(name.clone(), normalized);
             }
