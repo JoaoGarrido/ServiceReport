@@ -5,7 +5,7 @@ Application to allow easy monthly reports for independent service workers: e.g t
 The workflow uses Google Calendar as the backend/database of your services to a certain client, as so, you only need to keep track of your Google Calendar and your monthly report will be calculated afterwards.
 It's recommended to have a separated calendar for your services.
 
-Will parse the events from your calendar assuming a `Service: Client` pattern from event summaries and generates a monthly report.
+Will parse the events from your calendar assuming a `Prefix: Client` pattern from event summaries and generates a monthly report.
 - Assumes that rates are per client
 - Events that do not match the pattern emit warnings.
 - Events to clients without a rate emit warnings.
@@ -32,17 +32,17 @@ cargo build --release
 ## Usage
 
 ```
-cargo run --release -- report --service-prefix "Explicação" --month 2 --year 2026
+cargo run --release -- report --event-prefix "Explicação" --month 2 --year 2026
 ```
 
 Or run the binary directly:
 
 ```
-./target/release/service-report --service-prefix "Explicação" --month 2 --year 2026
+./target/release/service-report --event-prefix "Explicação" --month 2 --year 2026
 ```
 
 ### Flags
-- `--service-prefix`: Prefix used to filter events (summary must start with it).
+- `--event-prefix`: Prefix used to filter events (summary must start with it).
 - `--month`: Month number (1–12).
 - `--year`: Full year (e.g., 2026).
 - `--calendar-config`: Path to calendar config (default: `calendar-config.yaml`).

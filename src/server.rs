@@ -245,7 +245,7 @@ async fn rates_ui() -> Html<String> {
 struct ReportQuery {
     calendar_config: Option<String>,
     rates_config: Option<String>,
-    service_prefix: Option<String>,
+    prefix: Option<String>,
 }
 
 async fn get_report(
@@ -313,7 +313,7 @@ async fn get_report(
 
     let cost_lookup = build_cost_lookup(&rates_config);
 
-    let prefix = query.service_prefix.as_deref();
+    let prefix = query.prefix.as_deref();
     let report = generate_report(
         &events,
         month,

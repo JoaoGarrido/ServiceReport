@@ -25,7 +25,7 @@ enum Commands {
     #[command(about = "Generate a report from Google Calendar")]
     Report {
         #[arg(long)]
-        service_prefix: Option<String>,
+        event_prefix: Option<String>,
 
         #[arg(long)]
         month: u32,
@@ -57,17 +57,16 @@ async fn main() -> Result<()> {
 
     match args.command {
         Commands::Report {
-            service_prefix,
+            event_prefix,
             month,
             year,
         } => {
             let calendar_config = cli::load_config(&args.calendar_config)?;
             let rates_config = cli::load_rates(&args.rates_config)?;
-            
             cli::run_report(
                 &calendar_config,
                 &rates_config,
-                service_prefix.as_deref(),
+                event_prefix.as_deref(),
                 month,
                 year,
             )?;

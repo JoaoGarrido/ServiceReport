@@ -1,51 +1,82 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Dashboard</title>
-    <style>
-      body { font-family: Arial, sans-serif; margin: 24px; }
-      .card { border: 1px solid #ddd; padding: 16px; border-radius: 8px; max-width: 520px; }
-      .row { margin-bottom: 12px; }
-      label { display: block; margin-bottom: 6px; }
-      input { padding: 6px 8px; width: 100%; max-width: 240px; }
-      button { padding: 8px 12px; margin-right: 8px; }
-      .actions { margin-top: 12px; }
-    </style>
-  </head>
-  <body>
-    <h1>Reports</h1>
-    <div class="card">
-      <div class="row">
-        <label for="year">Year</label>
-        <input id="year" type="number" placeholder="2026" />
-      </div>
-      <div class="row">
-        <label for="month">Month</label>
-        <input id="month" type="number" placeholder="1" min="1" max="12" />
-      </div>
-      <div class="actions">
-        <button type="button" onclick="openReport()">Open Report</button>
-        <button type="button" onclick="openRates()">Open Rates</button>
-      </div>
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 24px;
+    }
+
+    .card {
+      border: 1px solid #ddd;
+      padding: 16px;
+      border-radius: 8px;
+      max-width: 520px;
+    }
+
+    .row {
+      margin-bottom: 12px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    input {
+      padding: 6px 8px;
+      width: 100%;
+      max-width: 240px;
+    }
+
+    button {
+      padding: 8px 12px;
+      margin-right: 8px;
+    }
+
+    .actions {
+      margin-top: 12px;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Reports</h1>
+  <div class="card">
+    <div class="row">
+      <label for="year">Year</label>
+      <input id="year" type="number" placeholder="2026" />
     </div>
+    <div class="row">
+      <label for="month">Month</label>
+      <input id="month" type="number" placeholder="1" min="1" max="12" />
+    </div>
+    <div class="actions">
+      <button type="button" onclick="openReport()">Open Report</button>
+      <button type="button" onclick="openRates()">Open Rates</button>
+    </div>
+  </div>
 
-    <script>
-      function openReport() {
-        const year = document.getElementById('year').value;
-        const month = document.getElementById('month').value;
-        if (!year || !month) {
-          alert('Year and month are required');
-          return;
-        }
-        let url = `/report/${year}/${month}?service_prefix=Explica%C3%A7%C3%A3o`;
-        window.location.href = url;
+  <script>
+    function openReport() {
+      const year = document.getElementById('year').value;
+      const month = document.getElementById('month').value;
+      if (!year || !month) {
+        alert('Year and month are required');
+        return;
       }
+      let url = `/report/${year}/${month}?prefix=Explica%C3%A7%C3%A3o`;
+      window.location.href = url;
+    }
 
-      function openRates() {
-        window.location.href = '/rates-ui';
-      }
-    </script>
-  </body>
+    function openRates() {
+      window.location.href = '/rates-ui';
+    }
+  </script>
+</body>
+
 </html>
