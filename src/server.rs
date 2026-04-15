@@ -289,10 +289,16 @@ async fn get_report(
         &tz,
         state.prefix.clone().as_deref(),
         &cost_lookup,
-        OutputFormat::Html,
+        OutputFormat::Json,
     );
 
     Html(report)
+}
+
+async fn report_ui(Path((_year, _month)): Path<(i32, u32)>) -> Html<String> {
+    let template = std::fs::read_to_string("templates/report.html")
+        .unwrap_or_else(|_| "<p>Template not found</p>".to_string());
+    Html(template)
 }
 
 pub async fn run(
@@ -316,6 +322,7 @@ pub async fn run(
         )
         .route("/rates-ui", get(rates_ui))
         .route("/report/{year}/{month}", get(get_report))
+        .route("/report-ui/{year}/{month}", get(report_ui))
         .with_state(state);
 
     let addr: SocketAddr = format!("{}:{}", host, port).parse()?;

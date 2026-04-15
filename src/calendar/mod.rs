@@ -3,14 +3,38 @@ pub mod google;
 
 use chrono::{DateTime, Datelike, NaiveDate, TimeZone, Timelike};
 use chrono_tz::Tz;
+use serde::Serialize;
 use std::collections::{HashMap, HashSet};
 
 pub type Event = HashMap<String, serde_json::Value>;
 
 #[derive(Clone, Copy)]
 pub enum OutputFormat {
-    Html,
+    Json,
     Stdout,
+}
+
+#[derive(Serialize)]
+pub struct ClientReport {
+    pub name: String,
+    pub rows: Vec<ServiceRowJson>,
+    pub total_cost: f64,
+}
+
+#[derive(Serialize)]
+pub struct ServiceRowJson {
+    pub day: String,
+    pub start: String,
+    pub end: String,
+    pub hours: f64,
+    pub cost: f64,
+}
+
+#[derive(Serialize)]
+pub struct ReportJson {
+    pub total_hours: f64,
+    pub total_earned: f64,
+    pub clients: Vec<ClientReport>,
 }
 
 pub fn month_range(year: i32, month: u32, tz: &Tz) -> (DateTime<Tz>, DateTime<Tz>) {
@@ -210,13 +234,6 @@ fn format_time(start_time: DateTime<Tz>, end_time: DateTime<Tz>) -> (String, Str
     (start_str, end_str)
 }
 
-fn html_escape(s: &str) -> String {
-    s.replace('&', "&amp;")
-        .replace('<', "&lt;")
-        .replace('>', "&gt;")
-        .replace('"', "&quot;")
-}
-
 pub fn generate_report(
     events: &[Event],
     month: u32,
@@ -261,172 +278,80 @@ pub fn generate_report(
             .collect::<Vec<Event>>(),
     );
     match format {
-        OutputFormat::Html => html_report(&events_by_client, cost_lookup),
+        OutputFormat::Json => json_report(&events_by_client, cost_lookup),
         OutputFormat::Stdout => stdout_report(&events_by_client, cost_lookup),
     }
 }
 
-pub fn html_report(
+pub fn json_report(
     rows_by_client: &HashMap<String, Vec<ServiceRow>>,
     cost_lookup: &HashMap<String, f64>,
 ) -> String {
-    let missing_client_costs: HashSet<String> = HashSet::new();
+    let mut missing_client_costs: HashSet<String> = HashSet::new();
 
     if rows_by_client.is_empty() {
-        return "<p>No matching events found.</p>".to_string();
+        return serde_json::to_string(&ReportJson {
+            total_hours: 0.0,
+            total_earned: 0.0,
+            clients: vec![],
+        })
+        .unwrap();
     }
 
     let mut total_hours = 0.0;
     let mut total_earned = 0.0;
-    for (client_name, items) in rows_by_client {
-        for item in items {
-            total_hours += item.hours;
-            if let Some(rate) =
-                resolve_hourly_rate(client_name, cost_lookup, &mut missing_client_costs.clone())
-            {
-                total_earned += item.hours * rate;
-            }
-        }
-    }
+    let mut clients: Vec<ClientReport> = vec![];
 
-    let mut parts = vec![
-        "<html>".to_string(),
-        "<head>".to_string(),
-        r#"<meta charset="utf-8" />"#.to_string(),
-        "<style>".to_string(),
-        "body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 24px; max-width: 900px; margin: 0 auto; }".to_string(),
-        "table { border-collapse: collapse; width: 100%; margin-bottom: 16px; }".to_string(),
-        "th, td { border: 1px solid #e2e8f0; padding: 10px 12px; text-align: right; }".to_string(),
-        "th:first-child, td:first-child { text-align: left; }".to_string(),
-        "th { background: #f8fafc; font-weight: 600; }".to_string(),
-        "tr:hover { background: #f8fafc; }".to_string(),
-        "h2 { margin: 24px 0 12px 0; display: flex; align-items: center; gap: 12px; }".to_string(),
-        ".client-header { display: flex; align-items: center; justify-content: space-between; width: 100%; }".to_string(),
-        ".copy-btn { font-size: 12px; padding: 6px 12px; background: #f1f5f9; border: none; border-radius: 6px; cursor: pointer; color: #475569; }".to_string(),
-        ".copy-btn:hover { background: #e2e8f0; }".to_string(),
-        ".copy-btn.copied { background: #dcfce7; color: #166534; }".to_string(),
-        ".summary { margin-bottom: 24px; padding: 16px; background: #f8fafc; border-radius: 8px; }".to_string(),
-        ".summary p { margin: 4px 0; }".to_string(),
-        "</style>".to_string(),
-        "</head>".to_string(),
-        "<body>".to_string(),
-        "<div class=\"summary\">".to_string(),
-        "<p><strong>Summary</strong></p>".to_string(),
-        format!("<p>Hours worked: <strong>{:.2}</strong></p>", total_hours),
-        format!("<p>Total earned: <strong>{:.2}€</strong></p>", total_earned),
-        "</div>".to_string(),
-    ];
+    let mut client_names: Vec<&String> = rows_by_client.keys().collect();
+    client_names.sort();
 
-    let mut clients: Vec<&String> = rows_by_client.keys().collect();
-    clients.sort();
-
-    for client in clients {
-        let client_id = format!("client-{}", client.replace(' ', "-").to_lowercase());
-        parts.push(format!(
-            "<h2><span class=\"client-header\"><span>{}</span> <button class=\"copy-btn\" onclick=\"copyTable('{}')\">Copy</button></span></h2>",
-            html_escape(client),
-            client_id
-        ));
-        parts.push(format!("<table id=\"{}\">", client_id));
-        parts.push("<thead><tr><th>Day</th><th>Start</th><th>End</th><th>Hours</th><th>Cost</th></tr></thead>".to_string());
-        parts.push("<tbody>".to_string());
-
+    for client_name in client_names {
         let rows = {
-            let mut r = rows_by_client.get(client).unwrap().clone();
-            r.sort_by(|a, b| (a.day, a.start, a.end).cmp(&(b.day, b.start, b.end)));
+            let mut r = rows_by_client.get(client_name).unwrap().clone();
+            r.sort_by(|a, b| (a.day, a.start, a.end).cmp(&(b.day, a.start, b.end)));
             r
         };
 
-        let mut total_cost = 0.0;
+        let mut client_total_cost = 0.0;
+        let mut rows_json: Vec<ServiceRowJson> = vec![];
+
         for item in rows.iter() {
+            total_hours += item.hours;
             let (start_str, end_str) = format_time(item.start, item.end);
             let hourly_rate =
-                resolve_hourly_rate(client, cost_lookup, &mut missing_client_costs.clone());
-            let cost_display = match hourly_rate {
+                resolve_hourly_rate(client_name, cost_lookup, &mut missing_client_costs);
+            let cost = match hourly_rate {
                 Some(rate) => {
-                    let cost_value = item.hours * rate;
-                    total_cost += cost_value;
-                    format!("{:.2}", cost_value)
+                    let c = item.hours * rate;
+                    client_total_cost += c;
+                    total_earned += c;
+                    c
                 }
-                None => "-".to_string(),
+                None => 0.0,
             };
 
-            parts.push(format!(
-                "<tr><td>{}</td><td>{}</td><td>{}</td><td>{:.2}</td><td>{}</td></tr>",
-                html_escape(&item.day.format("%Y-%m-%d").to_string()),
-                html_escape(&start_str),
-                html_escape(&end_str),
-                item.hours,
-                html_escape(&cost_display)
-            ));
+            rows_json.push(ServiceRowJson {
+                day: item.day.format("%Y-%m-%d").to_string(),
+                start: start_str,
+                end: end_str,
+                hours: item.hours,
+                cost,
+            });
         }
 
-        if !rows.is_empty() {
-            parts.push(format!(
-                "<tr><td><strong>Total</strong></td><td></td><td></td><td></td><td><strong>{:.2}</strong></td></tr>",
-                total_cost
-            ));
-        }
-
-        parts.push("</tbody></table>".to_string());
+        clients.push(ClientReport {
+            name: client_name.clone(),
+            rows: rows_json,
+            total_cost: client_total_cost,
+        });
     }
 
-    parts.push(r#"<script>
-function copyTable(tableId) {
-    const table = document.getElementById(tableId);
-    if (!table) return;
-    const rows = table.querySelectorAll('tr');
-    const colWidths = [12, 6, 6, 8, 10];
-    
-    const pad = (str, width) => {
-        const s = String(str);
-        return s.length >= width ? s : s + ' '.repeat(width - s.length);
-    };
-    
-    let text = '';
-    rows.forEach(row => {
-        const cells = row.querySelectorAll('th, td');
-        const rowText = Array.from(cells).map((c, i) => pad(c.textContent.trim(), colWidths[i] || 10)).join(' ');
-        text += rowText + '\n';
-    });
-    
-    const btn = table.previousElementSibling.querySelector('.copy-btn');
-    const showCopied = () => {
-        if (btn) {
-            btn.textContent = 'Copied!';
-            btn.classList.add('copied');
-            setTimeout(() => {
-                btn.textContent = 'Copy';
-                btn.classList.remove('copied');
-            }, 2000);
-        }
-    };
-
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(showCopied);
-    } else {
-        const textarea = document.createElement('textarea');
-        textarea.value = text;
-        textarea.style.position = 'fixed';
-        textarea.style.left = '-9999px';
-        document.body.appendChild(textarea);
-        textarea.select();
-        try {
-            document.execCommand('copy');
-            showCopied();
-        } catch (e) {
-            if (btn) {
-                btn.textContent = 'Failed';
-                setTimeout(() => btn.textContent = 'Copy', 2000);
-            }
-        }
-        document.body.removeChild(textarea);
-    }
-}
-</script>"#.to_string());
-
-    parts.extend(["</body>".to_string(), "</html>".to_string()]);
-    parts.join("\n")
+    serde_json::to_string(&ReportJson {
+        total_hours,
+        total_earned,
+        clients,
+    })
+    .unwrap()
 }
 
 pub fn events_by_client(events: &[Event]) -> HashMap<String, Vec<ServiceRow>> {

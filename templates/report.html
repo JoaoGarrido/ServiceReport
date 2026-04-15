@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Report</title>
+  <style>
+    :root {
+      --primary-color: #2563eb;
+      --primary-hover: #1d4ed8;
+      --bg-color: #f8fafc;
+      --card-bg: #ffffff;
+      --text-color: #1e293b;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+      --radius: 12px;
+      --input-bg: #ffffff;
+      --input-border: #cbd5e1;
+      --input-focus: #2563eb;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 24px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    a {
+      color: var(--primary-color);
+      text-decoration: none;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 24px;
+    }
+
+    a:hover {
+      color: var(--primary-hover);
+      text-decoration: underline;
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 600;
+      margin: 0 0 24px 0;
+    }
+
+    h2 {
+      font-size: 20px;
+      font-weight: 600;
+      margin: 32px 0 16px 0;
+    }
+
+    .summary {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+      margin-bottom: 24px;
+    }
+
+    .summary p {
+      margin: 4px 0;
+      font-size: 16px;
+    }
+
+    .summary strong {
+      color: var(--primary-color);
+    }
+
+    .client-section {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+      margin-bottom: 24px;
+    }
+
+    .client-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .client-header h2 {
+      margin: 0;
+    }
+
+    .copy-btn {
+      font-size: 12px;
+      padding: 6px 12px;
+      background: #f1f5f9;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      color: #475569;
+      transition: all 0.2s;
+    }
+
+    .copy-btn:hover {
+      background: #e2e8f0;
+    }
+
+    .copy-btn.copied {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      border: 1px solid var(--border-color);
+      padding: 10px 12px;
+      text-align: right;
+    }
+
+    th:first-child,
+    td:first-child {
+      text-align: left;
+    }
+
+    th {
+      background: #f8fafc;
+      font-weight: 600;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+    }
+
+    tr:hover {
+      background: #f8fafc;
+    }
+
+    td:last-child {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 48px;
+      color: var(--text-muted);
+    }
+
+    .loading {
+      text-align: center;
+      padding: 48px;
+      color: var(--text-muted);
+    }
+
+    .error {
+      background: #fee2e2;
+      color: #991b1b;
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 16px;
+      }
+
+      .client-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      th,
+      td {
+        padding: 8px;
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <a href="/">&larr; Back to Dashboard</a>
+    <h1>Report</h1>
+    <div id="app">Loading...</div>
+  </div>
+
+  <script>
+    function getPathParams() {
+      const path = window.location.pathname;
+      const match = path.match(/\/report-ui\/(\d+)\/(\d+)/);
+      if (match) {
+        return {year: match[1], month: match[2]};
+      }
+      return {year: new Date().getFullYear(), month: new Date().getMonth() + 1};
+    }
+
+    function pad(str, width) {
+      const s = String(str);
+      return s.length >= width ? s : s + ' '.repeat(width - s.length);
+    }
+
+    function copyTable(tableId) {
+      const table = document.getElementById(tableId);
+      if (!table) return;
+      const rows = table.querySelectorAll('tr');
+      const colWidths = [12, 6, 6, 8, 10];
+
+      let text = '';
+      rows.forEach(row => {
+        const cells = row.querySelectorAll('th, td');
+        const rowText = Array.from(cells).map((c, i) => pad(c.textContent.trim(), colWidths[i] || 10)).join(' ');
+        text += rowText + '\n';
+      });
+
+      const btn = table.previousElementSibling.querySelector('.copy-btn');
+      const showCopied = () => {
+        if (btn) {
+          btn.textContent = 'Copied!';
+          btn.classList.add('copied');
+          setTimeout(() => {
+            btn.textContent = 'Copy';
+            btn.classList.remove('copied');
+          }, 2000);
+        }
+      };
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(showCopied);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.left = '-9999px';
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+          document.execCommand('copy');
+          showCopied();
+        } catch (e) {
+          if (btn) {
+            btn.textContent = 'Failed';
+            setTimeout(() => btn.textContent = 'Copy', 2000);
+          }
+        }
+        document.body.removeChild(textarea);
+      }
+    }
+
+    function renderClient(client, index) {
+      const clientId = `client-${index}`;
+      let rowsHtml = '';
+      client.rows.forEach(row => {
+        rowsHtml += `<tr>
+          <td>${row.day}</td>
+          <td>${row.start}</td>
+          <td>${row.end}</td>
+          <td>${row.hours.toFixed(2)}</td>
+          <td>${row.cost > 0 ? row.cost.toFixed(2) + '€' : '-'}</td>
+        </tr>`;
+      });
+
+      if (client.rows.length > 0) {
+        rowsHtml += `<tr>
+          <td><strong>Total</strong></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td><strong>${client.total_cost.toFixed(2)}€</strong></td>
+        </tr>`;
+      }
+
+      return `
+        <div class="client-section">
+          <div class="client-header">
+            <h2>${client.name}</h2>
+            <button class="copy-btn" onclick="copyTable('${clientId}')">Copy</button>
+          </div>
+          <table id="${clientId}">
+            <thead>
+              <tr><th>Day</th><th>Start</th><th>End</th><th>Hours</th><th>Cost</th></tr>
+            </thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    async function loadReport() {
+      const params = getPathParams();
+      const url = `/report/${params.year}/${params.month}`;
+
+      try {
+        const res = await fetch(url);
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+        const data = await res.json();
+
+        if (!data.clients || data.clients.length === 0) {
+          document.getElementById('app').innerHTML = '<div class="empty-state">No matching events found.</div>';
+          return;
+        }
+
+        let html = `
+          <div class="summary">
+            <p><strong>Summary</strong></p>
+            <p>Hours worked: <strong>${data.total_hours.toFixed(2)}</strong></p>
+            <p>Total earned: <strong>${data.total_earned.toFixed(2)}€</strong></p>
+          </div>
+        `;
+
+        data.clients.forEach((client, index) => {
+          html += renderClient(client, index);
+        });
+
+        document.getElementById('app').innerHTML = html;
+      } catch (e) {
+        document.getElementById('app').innerHTML = `<div class="error">Error loading report: ${e.message}</div>`;
+      }
+    }
+
+    loadReport();
+  </script>
+</body>
+
+</html>
