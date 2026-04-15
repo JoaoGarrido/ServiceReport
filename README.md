@@ -73,7 +73,7 @@ http://127.0.0.1:8000/report/2026/1
 
 ### Rates endpoint
 
-Show current hourly rates for all students:
+Show current hourly rates for all clients:
 
 ```
 http://127.0.0.1:8000/rates
@@ -87,28 +87,28 @@ Will output in markdown when called directly and in JSON when called from the ra
 **NOTE:**
 *A change of rate of certain client will lead to a different monthly report of previous months.`*
 
-Update a student's hourly rate (service optional). If service is omitted and the student does not exist, the student is added to the first service or to a Default service if none exist.
+Update a client's hourly rate (service optional). If service is omitted and the client does not exist, the client is added to the first service or to a Default service if none exist.
 
 ```
 POST http://127.0.0.1:8000/rates
 Content-Type: application/json
 
 {
-	"student": "Joana",
+	"client": "Joana",
 	"rate": 15
 }
 ```
 
 ### Delete rate (DELETE)
 
-Remove a student's rate:
+Remove a client's rate:
 
 ```
 DELETE http://127.0.0.1:8000/rates
 Content-Type: application/json
 
 {
-	"student": "Joana"
+	"client": "Joana"
 }
 ```
 

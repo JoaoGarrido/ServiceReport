@@ -1,109 +1,360 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Rates</title>
-    <style>
-      body { font-family: Arial, sans-serif; margin: 24px; }
-      table { border-collapse: collapse; width: 100%; margin-top: 16px; }
-      th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-      th:last-child, td:last-child { text-align: right; }
-      form { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
-      input { padding: 6px 8px; }
-      button { padding: 6px 10px; }
-      .actions { display: flex; gap: 6px; }
-      .error { color: #b00020; margin-top: 8px; }
-      .success { color: #2e7d32; margin-top: 8px; }
-    </style>
-  </head>
-  <body>
-    <p><a href="/">&larr; Back to Dashboard</a></p>
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rates</title>
+  <style>
+    :root {
+      --primary-color: #2563eb;
+      --primary-hover: #1d4ed8;
+      --danger-color: #dc2626;
+      --danger-hover: #b91c1c;
+      --bg-color: #f8fafc;
+      --card-bg: #ffffff;
+      --text-color: #1e293b;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+      --radius: 12px;
+      --input-bg: #ffffff;
+      --input-border: #cbd5e1;
+      --input-focus: #2563eb;
+      --success-bg: #dcfce7;
+      --success-text: #166534;
+      --error-bg: #fee2e2;
+      --error-text: #991b1b;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 24px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    h1,
+    h2 {
+      color: var(--text-color);
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 600;
+      margin: 0 0 24px 0;
+    }
+
+    h2 {
+      font-size: 18px;
+      font-weight: 600;
+      margin: 32px 0 16px 0;
+    }
+
+    a {
+      color: var(--primary-color);
+      text-decoration: none;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 24px;
+    }
+
+    a:hover {
+      color: var(--primary-hover);
+      text-decoration: underline;
+    }
+
+    a:focus {
+      outline: 2px solid var(--primary-color);
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .btn {
+      padding: 10px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+    }
+
+    .btn-secondary {
+      background-color: #f1f5f9;
+      color: var(--text-color);
+    }
+
+    .btn-secondary:hover {
+      background-color: #e2e8f0;
+    }
+
+    .btn-danger {
+      background-color: var(--danger-color);
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background-color: var(--danger-hover);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+
+    th,
+    td {
+      padding: 14px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    th {
+      background: #f8fafc;
+      font-weight: 600;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+    }
+
+    td:last-child {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover {
+      background: #f8fafc;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--text-muted);
+    }
+
+    .form-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    input {
+      flex: 1;
+      min-width: 140px;
+      padding: 10px 12px;
+      font-size: 15px;
+      border: 1px solid var(--input-border);
+      border-radius: 8px;
+      background: var(--input-bg);
+      color: var(--text-color);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--input-focus);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+
+    input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .message {
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-top: 16px;
+      font-weight: 500;
+    }
+
+    .message.success {
+      background: var(--success-bg);
+      color: var(--success-text);
+    }
+
+    .message.error {
+      background: var(--error-bg);
+      color: var(--error-text);
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 16px;
+      }
+
+      .form-row {
+        flex-direction: column;
+      }
+
+      input {
+        width: 100%;
+      }
+
+      th,
+      td {
+        padding: 12px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <a href="/">&larr; Back to Dashboard</a>
     <h1>Rates</h1>
-    <div class="actions">
-      <button type="button" onclick="loadRates()">Refresh</button>
+
+    <div class="card">
+      <table id="ratesTable">
+        <thead>
+          <tr>
+            <th>Client</th>
+            <th>Hourly Rate</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div id="emptyState" class="empty-state" style="display: none;">No rates configured.</div>
     </div>
 
-    <table id="ratesTable">
-      <thead>
-        <tr>
-          <th>Student</th>
-          <th>Hourly Rate</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-
     <h2>Update / Add Rate</h2>
-    <form id="rateForm">
-      <input type="text" id="student" placeholder="Student" required />
-      <input type="number" id="rate" placeholder="Rate" step="0.01" required />
-      <button type="submit">Save</button>
+    <form id="rateForm" class="form-row">
+      <input type="text" id="client" placeholder="Client name" required />
+      <input type="number" id="rate" placeholder="Rate (€)" step="0.01" required />
+      <button type="submit" class="btn btn-secondary">Save</button>
     </form>
 
     <h2>Delete Rate</h2>
-    <form id="deleteForm">
-      <input type="text" id="deleteStudent" placeholder="Student" required />
-      <button type="submit">Delete</button>
+    <form id="deleteForm" class="form-row">
+      <input type="text" id="deleteClient" placeholder="Client name" required />
+      <button type="submit" class="btn btn-danger">Delete</button>
     </form>
 
     <div id="message"></div>
+  </div>
 
-    <script>
-      async function loadRates() {
-        const res = await fetch('/rates?format=json');
-        const data = await res.json();
-        const tbody = document.querySelector('#ratesTable tbody');
-        tbody.innerHTML = '';
-        (data.rates || []).forEach(row => {
+  <script>
+    async function loadRates() {
+      const res = await fetch('/rates?format=json');
+      const data = await res.json();
+      const tbody = document.querySelector('#ratesTable tbody');
+      const emptyState = document.getElementById('emptyState');
+      const table = document.getElementById('ratesTable');
+
+      tbody.innerHTML = '';
+
+      if (!data.rates || data.rates.length === 0) {
+        table.style.display = 'none';
+        emptyState.style.display = 'block';
+      } else {
+        table.style.display = 'table';
+        emptyState.style.display = 'none';
+        data.rates.forEach(row => {
           const tr = document.createElement('tr');
-          tr.innerHTML = `<td>${row.student}</td><td>${Number(row.rate).toFixed(2)}</td>`;
+          tr.innerHTML = `<td>${row.client}</td><td>${Number(row.rate).toFixed(2)}€</td>`;
           tbody.appendChild(tr);
         });
       }
+    }
 
-      function showMessage(text, type) {
-        const el = document.getElementById('message');
-        el.className = type;
-        el.textContent = text;
+    function showMessage(text, type) {
+      const el = document.getElementById('message');
+      el.className = `message ${type}`;
+      el.textContent = text;
+      setTimeout(() => {
+        el.className = '';
+        el.textContent = '';
+      }, 4000);
+    }
+
+    document.getElementById('rateForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const client = document.getElementById('client').value;
+      const rate = document.getElementById('rate').value;
+      const res = await fetch('/rates', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({client, rate: parseFloat(rate)})
+      });
+      if (res.ok) {
+        showMessage('Rate saved successfully.', 'success');
+        document.getElementById('client').value = '';
+        document.getElementById('rate').value = '';
+        loadRates();
+      } else {
+        const err = await res.json();
+        showMessage(err.error || 'Failed to save rate.', 'error');
       }
+    });
 
-      document.getElementById('rateForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const student = document.getElementById('student').value;
-        const rate = document.getElementById('rate').value;
-        const res = await fetch('/rates', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ student, rate: parseFloat(rate) })
-        });
-        if (res.ok) {
-          showMessage('Rate saved.', 'success');
-          loadRates();
-        } else {
-          const err = await res.json();
-          showMessage(err.error || 'Failed to save rate.', 'error');
-        }
+    document.getElementById('deleteForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const client = document.getElementById('deleteClient').value;
+      if (!confirm(`Are you sure you want to delete the rate for "${client}"?`)) {
+        return;
+      }
+      const res = await fetch('/rates', {
+        method: 'DELETE',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({client})
       });
+      if (res.ok) {
+        showMessage('Rate deleted successfully.', 'success');
+        document.getElementById('deleteClient').value = '';
+        loadRates();
+      } else {
+        const err = await res.json();
+        showMessage(err.error || 'Failed to delete rate.', 'error');
+      }
+    });
 
-      document.getElementById('deleteForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const student = document.getElementById('deleteStudent').value;
-        const res = await fetch('/rates', {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ student })
-        });
-        if (res.ok) {
-          showMessage('Rate deleted.', 'success');
-          loadRates();
-        } else {
-          const err = await res.json();
-          showMessage(err.error || 'Failed to delete rate.', 'error');
-        }
-      });
+    loadRates();
+  </script>
+</body>
 
-      loadRates();
-    </script>
-  </body>
 </html>

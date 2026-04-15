@@ -65,7 +65,7 @@ async fn get_rates(
     if format == "json" {
         let json_rows = rows
             .into_iter()
-            .map(|(student, rate)| serde_json::json!({ "student": student, "rate": rate }))
+            .map(|(client, rate)| serde_json::json!({ "client": client, "rate": rate }))
             .collect::<Vec<_>>();
         let body = serde_json::json!({ "rates": json_rows }).to_string();
         return Ok(axum::response::Response::builder()
@@ -77,13 +77,13 @@ async fn get_rates(
     let mut lines = vec![
         "# Rates".to_string(),
         "".to_string(),
-        "| Student | Hourly Rate |".to_string(),
+        "| Client | Hourly Rate |".to_string(),
         "| --- | ---: |".to_string(),
     ];
 
     for row in &rows {
-        let (student, rate) = row;
-        lines.push(format!("| {} | {:.2}€ |", student, rate));
+        let (client, rate) = row;
+        lines.push(format!("| {} | {:.2}€ |", client, rate));
     }
 
     if rows.is_empty() {
@@ -99,7 +99,7 @@ async fn get_rates(
 
 #[derive(Debug, Deserialize)]
 struct RatePostPayload {
-    student: String,
+    client: String,
     rate: f64,
 }
 
@@ -122,7 +122,7 @@ async fn post_rates(
     })?;
 
     let per_client_hourly = config.per_client_hourly.get_or_insert_with(HashMap::new);
-    per_client_hourly.insert(payload.student, payload.rate);
+    per_client_hourly.insert(payload.client, payload.rate);
 
     write_config_with_backup(&rates_config_path, &config).map_err(|e| {
         (
@@ -138,7 +138,7 @@ async fn post_rates(
 
 #[derive(Debug, Deserialize)]
 struct RateDeletePayload {
-    student: String,
+    client: String,
 }
 
 async fn delete_rates(
@@ -161,7 +161,7 @@ async fn delete_rates(
 
     let mut removed = false;
     if let Some(ref mut per_client_hourly) = config.per_client_hourly {
-        if per_client_hourly.remove(&payload.student).is_some() {
+        if per_client_hourly.remove(&payload.client).is_some() {
             removed = true;
         }
     }
@@ -181,7 +181,7 @@ async fn delete_rates(
         return Err((
             axum::http::StatusCode::NOT_FOUND,
             Json(JsonError {
-                error: "Student not found".to_string(),
+                error: "Client not found".to_string(),
             }),
         ));
     }
