@@ -27,7 +27,7 @@ struct AppQuery {
     format: Option<String>,
 }
 
-fn build_cost_lookup(config: &RatesConfig) -> HashMap<String, HashMap<String, f64>> {
+fn build_cost_lookup(config: &RatesConfig) -> HashMap<String, f64> {
     config::build_cost_lookup(config)
 }
 
@@ -60,15 +60,7 @@ async fn get_rates(
         )
     })?;
 
-    let service = state
-        .prefix
-        .clone()
-        .unwrap_or_else(|| "Explicação".to_string());
-
     let mut rows = build_cost_lookup(&config)
-        .get(&service)
-        .unwrap()
-        .clone()
         .into_iter()
         .collect::<Vec<_>>();
     rows.sort_by(|a, b| a.0.cmp(&b.0));
@@ -131,29 +123,9 @@ async fn post_rates(
         )
     })?;
 
-    let service_costs = config.service_costs.get_or_insert_with(Vec::new);
+    let per_client_hourly = config.per_client_hourly.get_or_insert_with(HashMap::new);
+    per_client_hourly.insert(payload.student, payload.rate);
 
-    let service_name: String = state
-        .prefix
-        .clone()
-        .unwrap_or_else(|| "Explicação".to_string());
-
-    let target_entry = service_costs.iter_mut().find(|e| e.name == service_name);
-
-    if let Some(entry) = target_entry {
-        let per_client = entry.per_client_hourly.get_or_insert_with(HashMap::new);
-        per_client.insert(payload.student, payload.rate);
-    } else {
-        let new_entry = config::ServiceCost {
-            name: service_name.clone(),
-            per_client_hourly: Some({
-                let mut m = HashMap::new();
-                m.insert(payload.student, payload.rate);
-                m
-            }),
-        };
-        service_costs.push(new_entry);
-    }
     write_config_with_backup(&rates_config_path, &config).map_err(|e| {
         (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
@@ -190,18 +162,9 @@ async fn delete_rates(
     })?;
 
     let mut removed = false;
-    let service_name = state
-        .prefix
-        .clone()
-        .unwrap_or_else(|| "Explicação".to_string());
-
-    if let Some(ref mut service_costs) = config.service_costs {
-        if let Some(entry) = service_costs.iter_mut().find(|e| e.name == service_name) {
-            if let Some(ref mut per_client) = entry.per_client_hourly {
-                if per_client.remove(&payload.student).is_some() {
-                    removed = true;
-                }
-            }
+    if let Some(ref mut per_client_hourly) = config.per_client_hourly {
+        if per_client_hourly.remove(&payload.student).is_some() {
+            removed = true;
         }
     }
 

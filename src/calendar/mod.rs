@@ -182,31 +182,15 @@ pub struct ServiceRow {
 }
 
 fn resolve_hourly_rate(
-    service_name: &str,
     client: &str,
-    cost_lookup: &HashMap<String, HashMap<String, f64>>,
-    missing_services: &mut HashSet<String>,
-    missing_clients: &mut HashSet<(String, String)>,
+    cost_lookup: &HashMap<String, f64>,
+    missing_clients: &mut HashSet<String>,
 ) -> Option<f64> {
-    let rates = match cost_lookup.get(service_name) {
-        Some(r) => r,
-        None => {
-            if missing_services.insert(service_name.to_string()) {
-                tracing::warn!("Missing cost config for service: {}", service_name);
-            }
-            return None;
-        }
-    };
-    match rates.get(client) {
+    match cost_lookup.get(client) {
         Some(rate) => Some(*rate),
         None => {
-            let key = (service_name.to_string(), client.to_string());
-            if missing_clients.insert(key) {
-                tracing::warn!(
-                    "Missing cost config for service/client: {} / {}",
-                    service_name,
-                    client
-                );
+            if missing_clients.insert(client.to_string()) {
+                tracing::warn!("Missing cost config for client: {}", client);
             }
             None
         }
@@ -239,7 +223,7 @@ pub fn generate_report(
     year: i32,
     tz: &Tz,
     prefix: Option<&str>,
-    cost_lookup: &HashMap<String, HashMap<String, f64>>,
+    cost_lookup: &HashMap<String, f64>,
     format: OutputFormat,
 ) -> String {
     let initial_date = tz.with_ymd_and_hms(year, month, 1, 0, 0, 0).unwrap();
@@ -266,8 +250,7 @@ pub fn generate_report(
             if let Some(p) = prefix {
                 summary.starts_with(p)
             } else {
-                tracing::warn!("Event without prefix: {}", summary);
-                false
+                true
             }
         })
         .collect();
@@ -285,10 +268,9 @@ pub fn generate_report(
 
 pub fn html_report(
     rows_by_client: &HashMap<String, Vec<ServiceRow>>,
-    cost_lookup: &HashMap<String, HashMap<String, f64>>,
+    cost_lookup: &HashMap<String, f64>,
 ) -> String {
-    let missing_service_costs: HashSet<String> = HashSet::new();
-    let missing_client_costs: HashSet<(String, String)> = HashSet::new();
+    let missing_client_costs: HashSet<String> = HashSet::new();
 
     if rows_by_client.is_empty() {
         return "<p>No matching events found.</p>".to_string();
@@ -300,10 +282,8 @@ pub fn html_report(
         for item in items {
             total_hours += item.hours;
             if let Some(rate) = resolve_hourly_rate(
-                &item.service,
                 client_name,
                 cost_lookup,
-                &mut missing_service_costs.clone(),
                 &mut missing_client_costs.clone(),
             ) {
                 total_earned += item.hours * rate;
@@ -348,10 +328,8 @@ pub fn html_report(
         for item in rows.iter() {
             let (start_str, end_str) = format_time(item.start, item.end);
             let hourly_rate = resolve_hourly_rate(
-                &item.service,
                 client,
                 cost_lookup,
-                &mut missing_service_costs.clone(),
                 &mut missing_client_costs.clone(),
             );
             let cost_display = match hourly_rate {
@@ -414,10 +392,9 @@ pub fn events_by_client(events: &[Event]) -> HashMap<String, Vec<ServiceRow>> {
 
 pub fn stdout_report(
     rows_by_client: &HashMap<String, Vec<ServiceRow>>,
-    cost_lookup: &HashMap<String, HashMap<String, f64>>,
+    cost_lookup: &HashMap<String, f64>,
 ) -> String {
-    let mut missing_service_costs: HashSet<String> = HashSet::new();
-    let mut missing_client_costs: HashSet<(String, String)> = HashSet::new();
+    let mut missing_client_costs: HashSet<String> = HashSet::new();
 
     let mut lines = vec![];
     let mut clients: Vec<&String> = rows_by_client.keys().collect();
@@ -439,10 +416,8 @@ pub fn stdout_report(
         for item in rows.iter() {
             let (start_str, end_str) = format_time(item.start, item.end);
             let hourly_rate = resolve_hourly_rate(
-                &item.service,
                 client,
                 cost_lookup,
-                &mut missing_service_costs,
                 &mut missing_client_costs,
             );
             let cost_display = match hourly_rate {
@@ -483,44 +458,11 @@ pub fn calculate_month_totals(
     year: i32,
     tz: &Tz,
     prefix: Option<&str>,
-    cost_lookup: &HashMap<String, HashMap<String, f64>>,
+    cost_lookup: &HashMap<String, f64>,
 ) -> (f64, f64) {
     let mut total_hours = 0.0;
     let mut total_cost = 0.0;
-    let mut missing_service_costs: HashSet<String> = HashSet::new();
-    let mut missing_client_costs: HashSet<(String, String)> = HashSet::new();
-
-    fn resolve_hourly_rate(
-        service_name: &str,
-        client: &str,
-        cost_lookup: &HashMap<String, HashMap<String, f64>>,
-        missing_services: &mut HashSet<String>,
-        missing_clients: &mut HashSet<(String, String)>,
-    ) -> Option<f64> {
-        let rates = match cost_lookup.get(service_name) {
-            Some(r) => r,
-            None => {
-                if missing_services.insert(service_name.to_string()) {
-                    tracing::warn!("Missing cost config for service: {}", service_name);
-                }
-                return None;
-            }
-        };
-        match rates.get(client) {
-            Some(rate) => Some(*rate),
-            None => {
-                let key = (service_name.to_string(), client.to_string());
-                if missing_clients.insert(key) {
-                    tracing::warn!(
-                        "Missing cost config for service/client: {} / {}",
-                        service_name,
-                        client
-                    );
-                }
-                None
-            }
-        }
-    }
+    let mut missing_clients: HashSet<String> = HashSet::new();
 
     for event in events {
         let summary = event.get("summary").and_then(|v| v.as_str()).unwrap_or("");
@@ -535,7 +477,7 @@ pub fn calculate_month_totals(
             }
         };
 
-        let (service_name, client) = parsed;
+        let (_service_name, client) = parsed;
 
         let parse_result = parse_event_datetimes(event, tz);
         let (start_dt, end_dt, _) = match parse_result {
@@ -546,13 +488,15 @@ pub fn calculate_month_totals(
             }
         };
 
-        let hourly_rate = resolve_hourly_rate(
-            &service_name,
-            &client,
-            cost_lookup,
-            &mut missing_service_costs,
-            &mut missing_client_costs,
-        );
+        let hourly_rate = match cost_lookup.get(&client) {
+            Some(rate) => Some(*rate),
+            None => {
+                if missing_clients.insert(client.clone()) {
+                    tracing::warn!("Missing cost config for client: {}", client);
+                }
+                None
+            }
+        };
 
         for segment in split_event_by_day(start_dt, end_dt, tz) {
             if segment.day.month() == month && segment.day.year() == year {
