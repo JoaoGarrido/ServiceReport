@@ -1,6 +1,16 @@
-# Calendar Services Report
+# Google Calendar Service Monthly Report
 
-CLI that reads Google Calendar events for a given month/year, parses `Service: Person` from event summaries, and outputs a Markdown report per person with day/hour details. Events that do not match the pattern emit warnings.
+Application to allow easy monthly reports for independent service workers: e.g tutoring classes and other regular jobs by paid by hour.
+
+The workflow uses Google Calendar as the backend/database of your services to a certain client, as so, you only need to keep track of your Google Calendar and your monthly report will be calculated afterwards.
+It's recommended to have a separated calendar for your services.
+
+Will parse the events from your calendar assuming a `Service: Client` pattern from event summaries and generates a monthly report.
+- Assumes that rates are per client
+- Events that do not match the pattern emit warnings.
+- Events to clients without a rate emit warnings.
+- Multi-day events are split by day.
+- All-day events are treated as 24h blocks per day.
 
 ## Setup
 
@@ -13,16 +23,22 @@ cp calendar-config.yaml.example calendar-config.yaml
 cp rates.yaml.example rates.yaml
 ```
 
-4. Install dependencies:
+4. Build the project:
 
 ```
-pip install -r requirements.txt
+cargo build --release
 ```
 
 ## Usage
 
 ```
-python calendar_report.py --service-prefix "Explicação" --month 2 --year 2026
+cargo run --release -- report --service-prefix "Explicação" --month 2 --year 2026
+```
+
+Or run the binary directly:
+
+```
+./target/release/service-report --service-prefix "Explicação" --month 2 --year 2026
 ```
 
 ### Flags
@@ -34,20 +50,25 @@ python calendar_report.py --service-prefix "Explicação" --month 2 --year 2026
 
 ## Output
 
-The tool prints Markdown tables grouped by person with columns: **Day**, **Start**, **End**, **Hours**, **Cost**, plus a **Total** row summing costs.
+The tool prints Markdown tables grouped by client with columns: **Day**, **Start**, **End**, **Hours**, **Cost**, plus a **Total** row summing costs.
 
 ## HTTP Server
 
-Serve a computed Markdown report over HTTP (Flask):
+An HTTP server provides a simple interface to the CLI.
 
 ```
-python report_server.py --calendar-config calendar-config.yaml --rates-config rates.yaml --host 127.0.0.1 --port 8000
+cargo run --release -- serve --host 127.0.0.1 --port 8000
 ```
+
+The homepage can be accessed afterwards in the browser through:
+127.0.0.1:8000
+
+### Report/<year>/<month> endpoint
 
 Request the report with path parameters (HTML response):
 
 ```
-http://127.0.0.1:8000/report/2026/1?service_prefix=Explica%C3%A7%C3%A3o
+http://127.0.0.1:8000/report/2026/1
 ```
 
 ### Rates endpoint
@@ -58,7 +79,13 @@ Show current hourly rates for all students:
 http://127.0.0.1:8000/rates
 ```
 
+Will output in markdown when called directly and in JSON when called from the rates-ui.
+
 ### Update rate (POST)
+
+
+**NOTE:**
+*A change of rate of certain client will lead to a different monthly report of previous months.`*
 
 Update a student's hourly rate (service optional). If service is omitted and the student does not exist, the student is added to the first service or to a Default service if none exist.
 
@@ -70,6 +97,7 @@ Content-Type: application/json
 	"student": "Joana",
 	"rate": 15
 }
+```
 
 ### Delete rate (DELETE)
 
@@ -83,13 +111,7 @@ Content-Type: application/json
 	"student": "Joana"
 }
 ```
-```
 
 ## Service Costs
 
-Add service costs in the config file. The `name` must match the service prefix (the part before `:` in the event summary). Each service can define per-person hourly rates.
-
-## Notes
-- Multi-day events are split by day.
-- All-day events are treated as 24h blocks per day.
-- Warnings are shown for events that do not match `Service: Person`.
+Add service costs in the config file. The `name` must match the service prefix (the part before `:` in the event summary). Each service can define per-client hourly rates.~

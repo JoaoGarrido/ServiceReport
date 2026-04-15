@@ -74,7 +74,7 @@
         const res = await fetch('/rates', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ student, rate })
+          body: JSON.stringify({ student, rate: parseFloat(rate) })
         });
         if (res.ok) {
           showMessage('Rate saved.', 'success');
