@@ -294,25 +294,40 @@ pub fn html_report(
         "<head>".to_string(),
         r#"<meta charset="utf-8" />"#.to_string(),
         "<style>".to_string(),
-        "table { border-collapse: collapse; width: 100%; }".to_string(),
-        "th, td { border: 1px solid #ccc; padding: 6px 8px; text-align: right; }".to_string(),
+        "body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 24px; max-width: 900px; margin: 0 auto; }".to_string(),
+        "table { border-collapse: collapse; width: 100%; margin-bottom: 16px; }".to_string(),
+        "th, td { border: 1px solid #e2e8f0; padding: 10px 12px; text-align: right; }".to_string(),
         "th:first-child, td:first-child { text-align: left; }".to_string(),
-        "th:nth-child(2), th:nth-child(3), td:nth-child(2), td:nth-child(3) { text-align: center; }".to_string(),
-        "h2 { margin-top: 24px; }".to_string(),
+        "th { background: #f8fafc; font-weight: 600; }".to_string(),
+        "tr:hover { background: #f8fafc; }".to_string(),
+        "h2 { margin: 24px 0 12px 0; display: flex; align-items: center; gap: 12px; }".to_string(),
+        ".client-header { display: flex; align-items: center; justify-content: space-between; width: 100%; }".to_string(),
+        ".copy-btn { font-size: 12px; padding: 6px 12px; background: #f1f5f9; border: none; border-radius: 6px; cursor: pointer; color: #475569; }".to_string(),
+        ".copy-btn:hover { background: #e2e8f0; }".to_string(),
+        ".copy-btn.copied { background: #dcfce7; color: #166534; }".to_string(),
+        ".summary { margin-bottom: 24px; padding: 16px; background: #f8fafc; border-radius: 8px; }".to_string(),
+        ".summary p { margin: 4px 0; }".to_string(),
         "</style>".to_string(),
         "</head>".to_string(),
         "<body>".to_string(),
-        "<p><strong>Congratulations!</strong></p>".to_string(),
-        format!("<p>Hours worked {:.2}</p>", total_hours),
-        format!("<p>Earned {:.2} this month</p>", total_earned),
+        "<div class=\"summary\">".to_string(),
+        "<p><strong>Summary</strong></p>".to_string(),
+        format!("<p>Hours worked: <strong>{:.2}</strong></p>", total_hours),
+        format!("<p>Total earned: <strong>{:.2}€</strong></p>", total_earned),
+        "</div>".to_string(),
     ];
 
     let mut clients: Vec<&String> = rows_by_client.keys().collect();
     clients.sort();
 
     for client in clients {
-        parts.push(format!("<h2>{}</h2>", html_escape(client)));
-        parts.push("<table>".to_string());
+        let client_id = format!("client-{}", client.replace(' ', "-").to_lowercase());
+        parts.push(format!(
+            "<h2><span class=\"client-header\"><span>{}</span> <button class=\"copy-btn\" onclick=\"copyTable('{}')\">Copy</button></span></h2>",
+            html_escape(client),
+            client_id
+        ));
+        parts.push(format!("<table id=\"{}\">", client_id));
         parts.push("<thead><tr><th>Day</th><th>Start</th><th>End</th><th>Hours</th><th>Cost</th></tr></thead>".to_string());
         parts.push("<tbody>".to_string());
 
@@ -355,6 +370,60 @@ pub fn html_report(
 
         parts.push("</tbody></table>".to_string());
     }
+
+    parts.push(r#"<script>
+function copyTable(tableId) {
+    const table = document.getElementById(tableId);
+    if (!table) return;
+    const rows = table.querySelectorAll('tr');
+    const colWidths = [12, 6, 6, 8, 10];
+    
+    const pad = (str, width) => {
+        const s = String(str);
+        return s.length >= width ? s : s + ' '.repeat(width - s.length);
+    };
+    
+    let text = '';
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('th, td');
+        const rowText = Array.from(cells).map((c, i) => pad(c.textContent.trim(), colWidths[i] || 10)).join(' ');
+        text += rowText + '\n';
+    });
+    
+    const btn = table.previousElementSibling.querySelector('.copy-btn');
+    const showCopied = () => {
+        if (btn) {
+            btn.textContent = 'Copied!';
+            btn.classList.add('copied');
+            setTimeout(() => {
+                btn.textContent = 'Copy';
+                btn.classList.remove('copied');
+            }, 2000);
+        }
+    };
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(showCopied);
+    } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.left = '-9999px';
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+            document.execCommand('copy');
+            showCopied();
+        } catch (e) {
+            if (btn) {
+                btn.textContent = 'Failed';
+                setTimeout(() => btn.textContent = 'Copy', 2000);
+            }
+        }
+        document.body.removeChild(textarea);
+    }
+}
+</script>"#.to_string());
 
     parts.extend(["</body>".to_string(), "</html>".to_string()]);
     parts.join("\n")
