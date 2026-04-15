@@ -60,9 +60,7 @@ async fn get_rates(
         )
     })?;
 
-    let mut rows = build_cost_lookup(&config)
-        .into_iter()
-        .collect::<Vec<_>>();
+    let mut rows = build_cost_lookup(&config).into_iter().collect::<Vec<_>>();
     rows.sort_by(|a, b| a.0.cmp(&b.0));
     if format == "json" {
         let json_rows = rows

@@ -1,6 +1,6 @@
 use crate::calendar::config::{self, CalendarConfig, RatesConfig};
 use crate::calendar::google;
-use crate::calendar::{generate_report, month_range, OutputFormat};
+use crate::calendar::{OutputFormat, generate_report, month_range};
 use anyhow::Result;
 use chrono::Utc;
 

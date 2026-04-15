@@ -281,11 +281,9 @@ pub fn html_report(
     for (client_name, items) in rows_by_client {
         for item in items {
             total_hours += item.hours;
-            if let Some(rate) = resolve_hourly_rate(
-                client_name,
-                cost_lookup,
-                &mut missing_client_costs.clone(),
-            ) {
+            if let Some(rate) =
+                resolve_hourly_rate(client_name, cost_lookup, &mut missing_client_costs.clone())
+            {
                 total_earned += item.hours * rate;
             }
         }
@@ -327,11 +325,8 @@ pub fn html_report(
         let mut total_cost = 0.0;
         for item in rows.iter() {
             let (start_str, end_str) = format_time(item.start, item.end);
-            let hourly_rate = resolve_hourly_rate(
-                client,
-                cost_lookup,
-                &mut missing_client_costs.clone(),
-            );
+            let hourly_rate =
+                resolve_hourly_rate(client, cost_lookup, &mut missing_client_costs.clone());
             let cost_display = match hourly_rate {
                 Some(rate) => {
                     let cost_value = item.hours * rate;
@@ -415,11 +410,7 @@ pub fn stdout_report(
         let mut total_cost = 0.0;
         for item in rows.iter() {
             let (start_str, end_str) = format_time(item.start, item.end);
-            let hourly_rate = resolve_hourly_rate(
-                client,
-                cost_lookup,
-                &mut missing_client_costs,
-            );
+            let hourly_rate = resolve_hourly_rate(client, cost_lookup, &mut missing_client_costs);
             let cost_display = match hourly_rate {
                 Some(rate) => {
                     let cost_value = item.hours * rate;
