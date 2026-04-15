@@ -62,6 +62,12 @@
   </div>
 
   <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const now = new Date();
+      document.getElementById('year').value = now.getFullYear();
+      document.getElementById('month').value = now.getMonth();
+    });
+
     function openReport() {
       const year = document.getElementById('year').value;
       const month = document.getElementById('month').value;
