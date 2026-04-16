@@ -1,6 +1,7 @@
 secrets/
 config/
-output/
+deploy/
 target/
+output/
 Cargo.lock
 __pycache__/
