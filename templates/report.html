@@ -179,6 +179,19 @@
       margin-bottom: 16px;
     }
 
+    .warning {
+      background: #fef3c7;
+      color: #92400e;
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+    }
+
+    .warning-list {
+      margin: 8px 0 0 0;
+      padding-left: 20px;
+    }
+
     @media (max-width: 480px) {
       body {
         padding: 16px;
@@ -323,7 +336,19 @@
           return;
         }
 
-        let html = `
+        let html = '';
+
+        if (data.missing_clients && data.missing_clients.length > 0) {
+          const missingList = data.missing_clients.map(c => `<li>${c}</li>`).join('');
+          html += `
+            <div class="warning">
+              <strong>Missing rates:</strong> The following clients have no hourly rate configured. Costs cannot be calculated.
+              <ul class="warning-list">${missingList}</ul>
+            </div>
+          `;
+        }
+
+        html += `
           <div class="summary">
             <p><strong>Summary</strong></p>
             <p>Hours worked: <strong>${data.total_hours.toFixed(2)}</strong></p>

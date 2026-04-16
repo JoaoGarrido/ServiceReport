@@ -35,6 +35,7 @@ pub struct ReportJson {
     pub total_hours: f64,
     pub total_earned: f64,
     pub clients: Vec<ClientReport>,
+    pub missing_clients: Vec<String>,
 }
 
 pub fn month_range(year: i32, month: u32, tz: &Tz) -> (DateTime<Tz>, DateTime<Tz>) {
@@ -294,6 +295,7 @@ pub fn json_report(
             total_hours: 0.0,
             total_earned: 0.0,
             clients: vec![],
+            missing_clients: vec![],
         })
         .unwrap();
     }
@@ -346,10 +348,14 @@ pub fn json_report(
         });
     }
 
+    let mut missing_clients: Vec<String> = missing_client_costs.into_iter().collect();
+    missing_clients.sort();
+
     serde_json::to_string(&ReportJson {
         total_hours,
         total_earned,
         clients,
+        missing_clients,
     })
     .unwrap()
 }
